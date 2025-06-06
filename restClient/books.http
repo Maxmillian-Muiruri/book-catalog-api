@@ -1,0 +1,39 @@
+@baseUrl = http://localhost: 3000
+
+
+## CREATE  A NEW BOOK
+
+POST http://localhost:3000/books
+Content-Type: application/json
+
+{
+  "title": "maxmillin muiruri",
+  "authorName": "J.K. Rowling",
+    "isbn": "1234554321",
+  "publishedYear": 2020,
+  "availableCopies": 10
+}
+
+###  create a book
+POST http://localhost:3000/books
+Content-Type: application/json
+
+
+{
+  "title": "Simon muiruri",
+  "authorName": "J.K. Rowling",
+    "isbn": "1234567890",
+  "publishedYear": 2020,
+  "availableCopies": 10
+}
+
+
+### GET ALL BOOKS
+GET http://localhost:3000/books
+
+
+### get all available
+GET http://localhost:3000/books?available=true
+
+### GET BOOK BY ISBN
+GET http://localhost:3000/books/isbn/1234554321
