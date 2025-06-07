@@ -46,3 +46,24 @@ CREATE TRIGGER validate_books_available_copies
     BEFORE INSERT OR UPDATE ON books
     FOR EACH ROW
     EXECUTE FUNCTION validate_available_copies();
+
+
+
+    CREATE OR REPLACE FUNCTION prevent_duplicate_title()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM books
+        WHERE LOWER(title) = LOWER(NEW.title)
+          AND id <> COALESCE(NEW.id, -1)
+    ) THEN
+        RAISE EXCEPTION 'A book with this title already exists.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_duplicate_title_trigger
+    BEFORE INSERT OR UPDATE ON books
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_duplicate_title();
