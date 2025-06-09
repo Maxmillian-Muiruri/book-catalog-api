@@ -50,4 +50,6 @@ Content-Type: application/json
   "availableCopies": 10
 }
 
+### DELETE A BOOK
+DELETE http://localhost:3000/books/6
 
