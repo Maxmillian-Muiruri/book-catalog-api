@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   ConflictException,
   Injectable,
@@ -6,132 +7,158 @@ import {
 import { CreateBookDto } from './dtos/create-books.dtos';
 import { UpdateBookDto } from './dtos/update-books.dtos';
 import { Book } from './interfaces/books.interfaces';
+import { DatabaseService } from '../database/connection.service';
+
+interface QueryResult<T> {
+  rows: T[];
+}
 
 @Injectable()
 export class BooksService {
-  private books: Book[] = [
-    {
-      id: 2,
-      title: 'blossom',
-      authorName: 'Joseph parmut',
-      publishedYear: 2002,
-      isbn: '1234567890',
-      availableCopies: 2,
-      isAvailable: true,
-    },
-  ];
-  private nextId = 3;
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  create(data: CreateBookDto): Book {
-    const existingBook = this.books.find((book) => book.title === data.title);
-
-    if (existingBook) {
+  async create(data: CreateBookDto): Promise<Book> {
+    const existing: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE title = $1',
+      [data.title],
+    );
+    if (existing.rows.length > 0) {
       throw new ConflictException(
         `Book with title ${data.title} already exists`,
       );
     }
 
-    const newBook: Book = {
-      id: this.nextId++,
-      ...data,
-      isAvailable: true,
-    };
-
-    this.books.push(newBook);
-
-    return newBook;
+    const result: QueryResult<Book> = await this.databaseService.query(
+      `INSERT INTO books (title, author_name, published_year, isbn, available_copies, is_available)
+       VALUES ($1, $2, $3, $4, $5, true) RETURNING *`,
+      [
+        data.title,
+        data.authorName,
+        data.publishedYear,
+        data.isbn,
+        data.availableCopies,
+      ],
+    );
+    return result.rows[0];
   }
 
-  findAll(): Book[] {
-    return this.books;
+  async findAll(): Promise<Book[]> {
+    const result: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE is_available = true',
+    );
+    return result.rows;
   }
 
-  findAllActive(): Book[] {
-    return this.books.filter((book) => book.isAvailable);
+  async findAllActive(): Promise<Book[]> {
+    const result: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE is_available = true',
+    );
+    return result.rows;
   }
 
-  findOne(id: number): Book {
-    const book = this.books.find((book) => book.id === id);
-    if (!book) {
+  async findOne(id: number): Promise<Book> {
+    const result: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE id = $1',
+      [id],
+    );
+    if (result.rows.length === 0) {
       throw new NotFoundException(`Book with id ${id} not found`);
     }
-    return book;
+    return result.rows[0];
   }
 
-  findByTitle(title: string): Book {
-    const book = this.books.find((book) => book.title === title);
-    if (!book) {
+  async findByTitle(title: string): Promise<Book> {
+    const result: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE title = $1',
+      [title],
+    );
+    if (result.rows.length === 0) {
       throw new NotFoundException(`Book with title ${title} not found`);
     }
-    return book;
+    return result.rows[0];
   }
 
-  findByIsbn(isbn: string): Book {
-    const book = this.books.find((book) => book.isbn === isbn);
-    if (!book) {
+  async findByIsbn(isbn: string): Promise<Book> {
+    const result: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE isbn = $1',
+      [isbn],
+    );
+    if (result.rows.length === 0) {
       throw new NotFoundException(`Book with ISBN ${isbn} not found`);
     }
-    return book;
+    return result.rows[0];
   }
 
-  update(id: number, data: UpdateBookDto): Book {
-    const bookIndex = this.books.findIndex((book) => book.id === id);
-    if (bookIndex === -1) {
+  async update(id: number, data: UpdateBookDto): Promise<Book> {
+    const existing: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE id = $1',
+      [id],
+    );
+    if (existing.rows.length === 0) {
       throw new NotFoundException(`Book with id ${id} not found`);
     }
 
-    // Prevent duplicate title
-    if (data.title && this.books[bookIndex].title !== data.title) {
-      const existingBook = this.books.find((book) => book.title === data.title);
-      if (existingBook) {
+    if (data.title && data.title !== existing.rows[0].title) {
+      const duplicate: QueryResult<Book> = await this.databaseService.query(
+        'SELECT * FROM books WHERE title = $1',
+        [data.title],
+      );
+      if (duplicate.rows.length > 0) {
         throw new ConflictException(
           'Another book with the same title already exists',
         );
       }
     }
 
-    const updatedBook: Book = {
-      ...this.books[bookIndex],
+    const updatedBook = {
+      ...existing.rows[0],
       ...data,
     };
 
-    this.books[bookIndex] = updatedBook;
-    return updatedBook;
+    const result: QueryResult<Book> = await this.databaseService.query(
+      `UPDATE books SET title = $1, author_name = $2, published_year = $3, isbn = $4, available_copies = $5, is_available = $6
+       WHERE id = $7 RETURNING *`,
+      [
+        updatedBook.title,
+        updatedBook.authorName || updatedBook.authorName,
+        updatedBook.publishedYear || updatedBook.publishedYear,
+        updatedBook.isbn,
+        updatedBook.availableCopies || updatedBook.availableCopies,
+        updatedBook.isAvailable || updatedBook.isAvailable,
+        id,
+      ],
+    );
+    return result.rows[0];
   }
 
-  /**
-   * Soft delete (sets isAvailable field to false)
-   * @param id
-   * @return message: string
-   */
-  softDelete(id: number): { message: string } {
-    const bookIndex = this.books.findIndex((book) => book.id === id);
-    if (bookIndex === -1) {
+  async softDelete(id: number): Promise<{ message: string }> {
+    const existing: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE id = $1',
+      [id],
+    );
+    if (existing.rows.length === 0) {
       throw new NotFoundException(`Book with id ${id} not found`);
     }
 
-    this.books[bookIndex] = {
-      ...this.books[bookIndex],
-      isAvailable: false,
-    };
+    await this.databaseService.query(
+      'UPDATE books SET is_available = false WHERE id = $1',
+      [id],
+    );
 
     return { message: `Book with id ${id} has been deactivated.` };
   }
 
-  /**
-   * Hard delete (removes from array completely)
-   * @param id number
-   * @return message: string
-   */
-  hardDelete(id: number): { message: string } {
-    const bookIndex = this.books.findIndex((book) => book.id === id);
-    if (bookIndex === -1) {
+  async hardDelete(id: number): Promise<{ message: string }> {
+    const existing: QueryResult<Book> = await this.databaseService.query(
+      'SELECT * FROM books WHERE id = $1',
+      [id],
+    );
+    if (existing.rows.length === 0) {
       throw new NotFoundException(`Book with id ${id} not found`);
     }
-    const deletedBook = this.books.splice(bookIndex, 1)[0];
 
-    return {
-      message: `Book ${deletedBook.title} has been permanently deleted`,
-    };
+    await this.databaseService.query('DELETE FROM books WHERE id = $1', [id]);
+
+    return { message: `Book with id ${id} has been permanently deleted.` };
   }
 }

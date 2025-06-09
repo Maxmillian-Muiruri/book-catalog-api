@@ -23,9 +23,9 @@ export class BooksController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() data: CreateBookDto) {
+  async create(@Body() data: CreateBookDto) {
     try {
-      const book = this.booksService.create(data);
+      const book = await this.booksService.create(data);
       return {
         success: true,
         message: 'Book registered successfully',
@@ -41,13 +41,13 @@ export class BooksController {
   }
 
   @Get()
-  findAll(@Query('active') active?: string) {
+  async findAll(@Query('active') active?: string) {
     try {
       let books: Book[];
       if (active === 'active') {
-        books = this.booksService.findAllActive();
+        books = await this.booksService.findAllActive();
       } else {
-        books = this.booksService.findAll();
+        books = await this.booksService.findAll();
       }
       return {
         success: true,
@@ -64,9 +64,9 @@ export class BooksController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     try {
-      const book = this.booksService.findOne(id);
+      const book = await this.booksService.findOne(id);
       return {
         success: true,
         message: 'Book retrieved successfully',
@@ -82,9 +82,9 @@ export class BooksController {
   }
 
   @Get('title/:title')
-  findByTitle(@Param('title') title: string) {
+  async findByTitle(@Param('title') title: string) {
     try {
-      const book = this.booksService.findByTitle(title);
+      const book = await this.booksService.findByTitle(title);
       return {
         success: true,
         message: 'Book retrieved successfully',
@@ -100,9 +100,9 @@ export class BooksController {
   }
 
   @Get('isbn/:isbn')
-  findByIsbn(@Param('isbn') isbn: string) {
+  async findByIsbn(@Param('isbn') isbn: string) {
     try {
-      const book = this.booksService.findByIsbn(isbn);
+      const book = await this.booksService.findByIsbn(isbn);
       return {
         success: true,
         message: 'Book retrieved successfully',
@@ -116,10 +116,14 @@ export class BooksController {
       };
     }
   }
+
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateBookDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateBookDto,
+  ) {
     try {
-      const book = this.booksService.update(id, data);
+      const book = await this.booksService.update(id, data);
       return {
         success: true,
         message: 'Book updated successfully',
@@ -135,9 +139,9 @@ export class BooksController {
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
+  async delete(@Param('id', ParseIntPipe) id: number) {
     try {
-      const book = this.booksService.softDelete(id);
+      const book = await this.booksService.softDelete(id);
       return {
         success: true,
         message: book.message,
@@ -152,9 +156,9 @@ export class BooksController {
   }
 
   @Delete(':id/permanent')
-  hardDelete(@Param('id', ParseIntPipe) id: number) {
+  async hardDelete(@Param('id', ParseIntPipe) id: number) {
     try {
-      const book = this.booksService.hardDelete(id);
+      const book = await this.booksService.hardDelete(id);
       return {
         success: true,
         message: book.message,

@@ -9,7 +9,7 @@
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );*/
-
+ 
 
 CREATE OR REPLACE FUNCTION create_book(
     p_title VARCHAR,

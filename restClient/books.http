@@ -7,10 +7,9 @@ POST http://localhost:3000/books
 Content-Type: application/json
 
 {
-  "id" : 1,
-  "title": "Maxmillin muiruri",
+  "title": "samuel w",
   "authorName": "J.K. Rowling",
-    "isbn": "1234554321",
+    "isbn": "",
   "publishedYear": 2020,
   "availableCopies": 10
 }
@@ -21,9 +20,9 @@ Content-Type: application/json
 
 
 {
-  "title": "Simon njuguna",
+  "title": "paul njuguna",
   "authorName": "J.K. Rowling",
-    "isbn": "1234567890",
+    "isbn": "123457897",
   "publishedYear": 2020,
   "availableCopies": 10
 }
@@ -40,18 +39,15 @@ GET http://localhost:3000/books?available=true
 GET http://localhost:3000/books/isbn/1234554321
 
 ### UPDATE A BOOK
-PATCH  http://localhost:3000/books/isbn/1234567890
+PATCH http://localhost:3000/books/6
 Content-Type: application/json
 
 { 
-  "id": 3,
   "title": "Simon muiruri",
   "authorName": "J.K. Rowling",
-    "isbn": "1234567890",
+    "isbn": "12345678997",
   "publishedYear": 2020,
   "availableCopies": 10
 }
 
 
-### Run this in VS Code's SQL editor
-SELECT current_database();
